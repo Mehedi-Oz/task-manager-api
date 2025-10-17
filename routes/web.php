@@ -1,24 +1,20 @@
 <?php
 
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\TaskUserController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return view('welcome');
+});
 
-// Home Route
-Route::get('/', [TaskController::class, 'index'])->name('index');
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-// User Authentication Routes - TaskUserController
-Route::get('/login', [TaskUserController::class, 'handleLogin'])->name('user.handleLogin');
-Route::get('/register', [TaskUserController::class, 'handleRegister'])->name('user.handleRegister');
-Route::post('/store', [TaskUserController::class, 'store'])->name('user.store');
-Route::post('/verify', [TaskUserController::class, 'verify'])->name('user.verify');
-
-
-
-// Task Management Routes - TaskController
-Route::get('/tasks/trash', [TaskController::class, 'trash'])->name('tasks.trash');
-Route::get('/tasks/restore/{id}', [TaskController::class, 'restore'])->name('tasks.restore');
-Route::delete('/tasks/trash/{id}', [TaskController::class, 'permanentDestroy'])->name('tasks.permanentDestroy');
-Route::resource('tasks', TaskController::class);
+require __DIR__.'/auth.php';
