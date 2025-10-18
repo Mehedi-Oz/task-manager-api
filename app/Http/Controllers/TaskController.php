@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TaskRequest;
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
@@ -14,7 +15,7 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::where('user_id', 1)->get();
+        $tasks = Auth::user()->tasks()->get();
         return view('task.index', compact('tasks'));
     }
 
@@ -32,54 +33,65 @@ class TaskController extends Controller
     public function store(TaskRequest $request)
     {
         $data = $request->validated();
-        $data['user_id'] = 2;
+        Auth::user()->tasks()->create($data);
 
-        Task::create($data);
-
-        return redirect()->route('tasks.index')->with(['message' => 'New task added!']);
+        return redirect()->route('tasks.index')->with(['message' =>
+        'New task added!']);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Task $task)
     {
-        $task = Task::findOrFail($id);
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         return view('task.show', compact('task'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Task $task)
     {
-        $task = Task::findOrFail($id);
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         return view('task.edit', compact('task'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(TaskRequest $request, string $id)
+    public function update(TaskRequest $request, Task $task)
     {
-        $data = $request->validated();
-        $data['user_id'] = 2;
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
 
-        $task = Task::findOrFail($id);
+        $data = $request->validated();
         $task->update($data);
 
-        return redirect()->back()->with(['message' => 'Task updated!']);
+        return redirect()->back()->with(['message' => 'Task
+       updated!']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Task $task)
     {
-        $task = Task::findOrFail($id);
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $task->delete();
 
-        return redirect()->back()->with(['message' => 'Task deleted!']);
+        return redirect()->back()->with(['message' => 'Task
+       deleted!']);
     }
 
     /**
@@ -87,28 +99,34 @@ class TaskController extends Controller
      */
     public function trash()
     {
-        $tasks = Task::onlyTrashed()->get();
+        $tasks = Auth::user()->tasks()->onlyTrashed()->get();
         return view('task.trash', compact('tasks'));
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function restore(string $id)
+    public function restore(Task $task)
     {
-        $task = Task::onlyTrashed()->findOrFail($id);
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
         $task->restore();
 
-        return redirect()->route('tasks.index')->with(['message' => 'Task restored!']);
+        return redirect()->route('tasks.index')->with(['message' =>
+        'Task restored!']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function permanentDestroy(string $id)
+    public function permanentDestroy(Task $task)
     {
-        $task = Task::onlyTrashed()->findOrFail($id);
+        if ($task->user_id !== Auth::id()) {
+            abort(403);
+        }
         $task->forceDelete();
-        return redirect()->route('tasks.index')->with(['message' => 'Task deleted completely!']);
+        return redirect()->route('tasks.index')->with(['message' =>
+        'Task deleted completely!']);
     }
 }
